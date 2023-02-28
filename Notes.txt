@@ -1,0 +1,103 @@
+
+Background
+============
+
+c, c++ ,unlike java, do not provide garbage collection facility
+
+as a result these language mainly have two problems
+
+1. Memory leak
+
+Memory leak is a situation where a program or process does not release the memory it has allocated but no longer needs, 
+leading to a gradual reduction of available memory. This can cause the program or system to slow down or eventually crash.
+
+#include <stdlib.h>
+
+int main() {
+    while (1) {
+        int* arr = (int*) malloc(sizeof(int) * 1000);
+        // do something with arr
+    }
+    return 0;
+}
+
+ it repeatedly allocates memory using the malloc() function inside an infinite loop, but it never frees that memory using the free() function. 
+ Over time, the program will consume more and more memory until it eventually runs out and crashes.
+
+ 2. Memory corruption
+
+ unintended modification of memory contents due to programming errors or malicious attacks. It occurs 
+ when a program accesses memory locations that it is not supposed to access or overwrites memory that is allocated for other purposes.
+
+Buffer overflows: Writing data beyond the bounds of an allocated buffer, which can overwrite adjacent memory locations.
+Use-after-free: Accessing memory that has been freed or released, which can lead to accessing invalid memory locations.
+Null pointer dereferences: Accessing memory using a null pointer, which can lead to segmentation faults or other errors.
+Pointer arithmetic errors: Incorrect pointer manipulation, which can cause accessing or overwriting invalid memory locations
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    char* buffer = (char*)malloc(10);
+    if(buffer == NULL) {
+        printf("Failed to allocate memory.\n");
+        return -1;
+    }
+    strcpy(buffer, "hello");
+    printf("Buffer content: %s\n", buffer);
+    free(buffer);
+    strcpy(buffer, "world"); // Accessing freed memory
+    printf("Buffer content: %s\n", buffer);
+    return 0;
+}
+
+In this example, a buffer of 10 bytes is allocated using malloc() and the string "hello" is copied into it using strcpy(). 
+The buffer is then freed using free(), but later the same buffer is used to store the string "world" using strcpy() again, 
+resulting in memory corruption. When the program tries to print the buffer contents the second time, it can cause undefined behavior, including a segmentation fault or other errors.
+
+
+Flow
+======
+
+ptr = (cast_type*) malloc(size);
+
+When malloc() is called, it searches for an available block of memory on the heap that is large enough 
+to accommodate the requested number of bytes. If such a block of memory is found, 
+it is marked as allocated and its starting address is returned. If no such block of memory is found, malloc()
+ returns a null pointer indicating that the allocation has failed.
+
+malloc interacts with the OS by requesting more memory when needed and returning memory when it is no longer needed. 
+The OS provides this memory by mapping virtual memory to physical memory or a file on disk.
+
+When a program requests memory from the heap using malloc, it interacts with the operating system (OS) through a system call 
+such as brk() or mmap().
+
+When the program first starts running, a portion of the virtual address space of the process is allocated to the heap. 
+This space is divided into small chunks of memory, called blocks, which can be allocated and freed using malloc and free.
+
+When malloc is called, it checks the heap for a free block of the requested size.
+ If such a block exists, it is returned to the caller. If not, malloc requests more memory from the OS.
+
+The OS provides memory to the program by mapping a contiguous region of virtual memory to a portion of physical memory 
+(or to a file on disk in some cases). This mapping is done through the system call brk() or mmap(),
+ which adjusts the size of the heap or creates a new memory mapping respectively. The memory returned to the program by malloc
+  is managed by the program itself, using the heap management algorithms, and is not under the direct control of the OS.
+
+When the program calls free, the memory is returned to the heap to be reused later. 
+If a large enough contiguous region of freed memory exists at the end of the heap, 
+the program can return that memory to the OS using the brk() system call, which shrinks the heap.
+
+HLD
+===
+
+app/program --> MLD library --> OS
+
+app will request memory using MLD
+
+MLD will keep track of allocated memory and links/references between them
+
+struct Database : info about all structs app is using
+
+object db : info for all objects malloc'ed by app
+
+leak detection algo : using object db
